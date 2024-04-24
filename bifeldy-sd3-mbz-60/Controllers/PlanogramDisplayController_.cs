@@ -175,7 +175,6 @@ namespace bifeldy_sd3_mbz_60.Controllers {
                 });
             }
             catch (Exception ex) {
-                Response.ContentType = "application/json";
                 return StatusCode(StatusCodes.Status500InternalServerError, new ResponseJsonSingle<dynamic> {
                     info = $"🙄 500 - {GetType().Name} (Mirror) 😪",
                     result = new {

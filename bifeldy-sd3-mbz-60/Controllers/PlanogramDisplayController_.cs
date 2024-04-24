@@ -21,9 +21,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
 
     [ApiController]
     [Route("planogram-display")]
-    public sealed class PlanogramDisplayController : ControllerBase {
-
-        private readonly ENV _env;
+    public sealed class PlanogramDisplayController : DataDcController {
 
         private readonly IApplicationService _app;
         private readonly IHttpService _http;
@@ -42,50 +40,13 @@ namespace bifeldy_sd3_mbz_60.Controllers {
             IConverterService cs,
             IGeneralRepository generalRepo,
             IPlanogramDisplayService planDisp
-        ) {
-            _env = env.Value;
+        ) : base(env, orapg) {
             _app = app;
             _http = http;
             _orapg = orapg;
             _cs = cs;
             _generalRepo = generalRepo;
             _planDisp = planDisp;
-        }
-
-        private async Task<ObjectResult> CheckExcludeJenisDc(InputJsonDc fd) {
-            string targetJenisDc = await _orapg.ExecScalarAsync<string>($@"
-                SELECT
-                    tbl_dc_nama
-                FROM
-                    dc_tabel_v
-                WHERE
-                    tbl_dc_kode = :kode_dc
-            ", new List<CDbQueryParamBind>() {
-                new CDbQueryParamBind { NAME = "kode_dc", VALUE = fd.kode_dc.ToUpper() }
-            });
-
-            if (string.IsNullOrEmpty(targetJenisDc)) {
-                return BadRequest(new ResponseJsonSingle<dynamic> {
-                    info = $"🙄 404 - {GetType().Name} 😪",
-                    result = new {
-                        message = $"Kode DC {fd.kode_dc.ToUpper()} tidak tersedia"
-                    }
-                });
-            }
-
-            if (ExcludeJenisDc == null || ExcludeJenisDc?.Count <= 0) {
-                ExcludeJenisDc = _env.EXCLUDE_JENIS_DC?.Split(",").Select(d => d.ToUpper().Trim()).ToList();
-            }
-            if (ExcludeJenisDc != null && ExcludeJenisDc.Count > 0 && ExcludeJenisDc.Contains(targetJenisDc.ToUpper())) {
-                return BadRequest(new ResponseJsonSingle<dynamic> {
-                    info = $"🙄 403 - {GetType().Name} 😪",
-                    result = new {
-                        message = $"Tidak Dapat mengambil data pada DC {string.Join(", ", ExcludeJenisDc.ToArray())} karena masuk ke dalam daftar pengecualian"
-                    }
-                });
-            }
-
-            return null;
         }
 
         [HttpPost]
@@ -120,7 +81,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
                     });
                 }
                 else {
-                    ObjectResult er = await CheckExcludeJenisDc(fd);
+                    ObjectResult er = await CheckExcludeJenisDc(fd, ExcludeJenisDc);
                     if (er != null) {
                         return er;
                     }
@@ -189,7 +150,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
                     });
                 }
 
-                ObjectResult er = await CheckExcludeJenisDc(fd);
+                ObjectResult er = await CheckExcludeJenisDc(fd, ExcludeJenisDc);
                 if (er != null) {
                     return er;
                 }

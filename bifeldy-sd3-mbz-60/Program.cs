@@ -62,6 +62,8 @@ Bifeldy.AddDependencyInjection();
 Bifeldy.AddKafkaAutoProducerConsumerBackground();
 // --
 builder.Services.AddScoped<ISpinnerService, CSpinnerService>();
+// --
+builder.Services.AddSingleton<IPlanogramDisplayService, CPlanogramDisplayService>();
 
 // Job Scheduler Di Sini -- https://www.freeformatter.com/cron-expression-generator-quartz.html
 Bifeldy.CreateJobSchedule<JobFolderCleaner>("0 * * ? * *");

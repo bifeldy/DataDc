@@ -1,0 +1,52 @@
+﻿@inherits ComponentBase
+
+@using bifeldy_sd3_lib_60.Models
+@using bifeldy_sd3_lib_60.Services
+
+@using bifeldy_sd3_mbz_60.Models
+
+@inject IApplicationService _as
+@inject IChiperService _chiper
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+            @MudDialog.Title
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="@apiDc.DC_KODE" Label="Kode DC" ReadOnly="true" Required />
+        <MudTextField @bind-Value="@apiDc.IP_NGINX" Label="IP Nginx" ReadOnly="true" Required />
+        <MudTextField @bind-Value="@apiDc.API_PATH" Label="Api Path" Required />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" EndIcon="@Icons.Material.Filled.Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="Save" EndIcon="@Icons.Material.Filled.Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+ @code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public ListApiDc apiDc { get; set; } = null;
+
+    protected override void OnInitialized() {
+        if (string.IsNullOrEmpty(apiDc.API_PATH)) {
+            apiDc.API_PATH = apiDc.DEFAULT_API_PATH;
+        }
+    }
+
+    private void Cancel() {
+        MudDialog.Cancel();
+    }
+
+    private void Save() {
+        if (!string.IsNullOrEmpty(apiDc?.DC_KODE) && !string.IsNullOrEmpty(apiDc?.IP_NGINX) && !string.IsNullOrEmpty(apiDc?.API_PATH)) {
+            MudDialog.Close(DialogResult.Ok(apiDc));
+        }
+    }
+
+}

@@ -1,0 +1,28 @@
+﻿<Spinner></Spinner>
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(FoundLayout)">
+                <NotAuthorized>
+                    <div class="ma-3 pa-3" role="alert">
+                        Silahkan masuk menggunakan akun S/SD3 terlebih dahulu.
+                    </div>
+                </NotAuthorized>
+                <Authorizing>
+                    <div class="ma-3 pa-3" role="alert">
+                        Sedang mengecek akun, mohon menunggu ...
+                    </div>
+                </Authorizing>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <PageTitle>Not Found</PageTitle>
+            <LayoutView Layout="@typeof(NotFoundLayout)">
+                <div class="ma-3 pa-3" role="alert">
+                    Whoops, spertinya halaman yang kamu cari tidak tersedia.
+                </div>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

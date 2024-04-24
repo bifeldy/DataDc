@@ -1,0 +1,167 @@
+﻿@page "/api-token-login"
+@inherits PagesLayout
+@attribute [Authorize(Roles = "USER_SD_SSD_3")]
+
+@using bifeldy_sd3_lib_60.Databases
+@using bifeldy_sd3_lib_60.Repositories
+@using bifeldy_sd3_lib_60.Services
+@using bifeldy_sd3_lib_60.Tables
+
+@using bifeldy_sd3_mbz_60.Models
+@using bifeldy_sd3_mbz_60.Shared.Dialogs
+
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@inject IOraPg _orapg
+@inject IApiTokenRepository _apiTokenRepo
+
+
+<PageTitle>API Token & Login</PageTitle>
+
+<MudPaper Square="true" Class="px-0" Style="background: orange; height: 64px;" />
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-5 px-5">
+
+    <MudText Typo="Typo.h3" GutterBottom="true">
+        Kelola API Token & Login External
+    </MudText>
+
+    <MudText Typo="Typo.h6">
+        Digunakan untuk informasi Login saat menembak /API/blablabla~ path.
+    </MudText>
+
+    <MudText Class="red-text">
+        Boleh diberikan kepada pihak ke-3 (tiga) di luar IT S/SD 03.
+    </MudText>
+
+    <MudDivider Class="my-3" />
+
+    @if (isBusy) {
+        <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+    }
+    else {
+        <MudTable T="API_TOKEN_T" Items="apiTokens" Filter="new Func<API_TOKEN_T, bool>(SearchFilter)" OnRowClick="RowClickEvent" Hover="true" SortLabel="Sort By" Elevation="0" Dense="true">
+            <ToolBarContent>
+                <MudButton Class="mx-1" Color="Color.Primary" Variant="Variant.Filled" OnClick="RefreshData" StartIcon="@Icons.Material.Filled.Refresh">Refresh</MudButton>
+                <MudButton Class="mx-1" Color="Color.Primary" Variant="Variant.Filled" OnClick="@(() => apiTokenEdit("Tambah Baru"))" StartIcon="@Icons.Material.Filled.Add">Baru</MudButton>
+                <MudSpacer />
+                <MudTextField @bind-Value="searchQuery" Class="mx-1" Placeholder="Pencarian" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>
+                    <MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<API_TOKEN_T, object>(x => x.USER_NAME)">User Name</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<API_TOKEN_T, object>(x => x.PASSWORD)">Password</MudTableSortLabel>
+                </MudTh>
+                <MudTh>
+                    <MudTableSortLabel SortBy="new Func<API_TOKEN_T, object>(x => x.LAST_LOGIN)">Last Login</MudTableSortLabel>
+                </MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="User Name">@context.USER_NAME</MudTd>
+                <MudTd DataLabel="Password">@(new string('*', context.PASSWORD.Length))</MudTd>
+                <MudTd DataLabel="Last Login">@context.LAST_LOGIN</MudTd>
+            </RowTemplate>
+            <PagerContent>
+                <MudTablePager PageSizeOptions="new int[]{ 50, 100 }" />
+            </PagerContent>
+        </MudTable>
+    }
+
+</MudContainer>
+
+
+@code {
+    private bool isBusy = false;
+
+    private List<API_TOKEN_T> apiTokens = new List<API_TOKEN_T>();
+
+    private string searchQuery = string.Empty;
+    private bool SearchFilter(API_TOKEN_T element) => Search(element, searchQuery);
+
+    protected override void OnInitialized() {
+        RefreshData();
+    }
+
+    private void RefreshData() {
+        Task.Run(async () => {
+            isBusy = true;
+            await base.InvokeAsync(base.StateHasChanged);
+            apiTokens.Clear();
+            List<API_TOKEN_T> newApiTokens = await _apiTokenRepo.GetAll();
+            apiTokens.AddRange(newApiTokens);
+            isBusy = false;
+            await base.InvokeAsync(base.StateHasChanged);
+        });
+    }
+
+    private bool Search(API_TOKEN_T element, string searchString) {
+        if (string.IsNullOrWhiteSpace(searchString)) {
+            return true;
+        }
+        if (!string.IsNullOrEmpty(element.USER_NAME)) {
+            if (element.USER_NAME.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+        }
+        if (!string.IsNullOrEmpty(element.PASSWORD)) {
+            if (element.PASSWORD.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void RowClickEvent(TableRowClickEventArgs<API_TOKEN_T> tableRowClickEventArgs) {
+        apiTokenEdit("Ubah Data", tableRowClickEventArgs.Item);
+    }
+
+    private async void apiTokenEdit(string title, API_TOKEN_T apiToken = null) {
+        DialogParameters parameters = new DialogParameters();
+        parameters.Add("apiToken", apiToken);
+
+        DialogOptions options = new DialogOptions {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            CloseOnEscapeKey = false,
+            CloseButton = true
+        };
+
+        IDialogReference dialog = DialogService.Show<ApiTokenDialogEdit>(title, parameters, options);
+
+        DialogResult result = await dialog.Result;
+        if (!result.Cancelled) {
+            if (apiToken == null) {
+                apiToken = (API_TOKEN_T) result.Data;
+                bool success = false;
+                await Task.Run(async () => {
+                    success = await _apiTokenRepo.Create(apiToken);
+                });
+                if (success) {
+                    Snackbar.Add("Berhasil Menambah API Token Login", Severity.Success);
+                }
+                else {
+                    Snackbar.Add("Gagal Menambah API Token Login", Severity.Error);
+                }
+            }
+            else {
+                apiToken = (API_TOKEN_T) result.Data;
+                bool success = false;
+                await Task.Run(async () => {
+                    _orapg.Set<API_TOKEN_T>().Update(apiToken);
+                    success = await _orapg.SaveChangesAsync() > 0;
+                });
+                if (success) {
+                    Snackbar.Add("Berhasil Memperbarui API Token Login", Severity.Success);
+                }
+                else {
+                    Snackbar.Add("Gagal Memperbarui API Token Login", Severity.Error);
+                }
+            }
+        }
+        RefreshData();
+    }
+
+}

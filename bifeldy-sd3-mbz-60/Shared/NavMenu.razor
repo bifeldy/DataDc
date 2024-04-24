@@ -1,0 +1,50 @@
+﻿@using bifeldy_sd3_lib_60.Repositories
+
+@inject NavigationManager _nm
+
+@inject IUserRepository _userRepo
+
+<MudNavMenu>
+    <AuthorizeView>
+        <Authorized>
+            <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="Logout">
+                Keluar
+            </MudNavLink>
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="@(_nm.BaseUri + "login")" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Login">
+                Masuk
+            </MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+    <MudDivider />
+    <MudNavLink Href="@_nm.BaseUri" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
+        Index Beranda
+    </MudNavLink>
+    <AuthorizeView Roles="USER_SD_SSD_3">
+        <Authorized>
+            <MudNavLink Href="@(_nm.BaseUri + "api-key-ip-origin")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Key">
+                API Key & IP Origin
+            </MudNavLink>
+            <MudNavLink Href="@(_nm.BaseUri + "api-token-login")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Token">
+                API Token & Login External
+            </MudNavLink>
+            <MudNavLink Href="@(_nm.BaseUri + "api-dc-list")" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AlternateEmail">
+                API DC List IP
+            </MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <MudNavLink Href="@(_nm.BaseUri + "api")" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Api">
+        Swagger Api Docs
+    </MudNavLink>
+</MudNavMenu>
+
+
+@code {
+
+    private async Task Logout() {
+        await _userRepo.LogoutUser();
+        _nm.NavigateTo(_nm.BaseUri);
+    }
+
+}

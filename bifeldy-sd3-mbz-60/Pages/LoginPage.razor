@@ -1,0 +1,92 @@
+﻿@page "/login"
+@inherits PagesLayout
+
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+
+@using bifeldy_sd3_lib_60.Repositories
+
+@inject NavigationManager _nm
+@inject ISnackbar _snackbar
+
+@inject IUserRepository _userRepo
+
+
+<PageTitle>Login</PageTitle>
+
+<MudPaper Square="true" Class="px-0" Style="background: gray; height: 64px;" />
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="pa-5">
+    <MudCard>
+        <MudCardHeader Class="pb-0">
+            <MudImage Src="images/logo_indomaret.png" Fluid="true" ObjectPosition="ObjectPosition.Center" />
+        </MudCardHeader>
+        <MudCardContent Class="pt-0">
+            <MudText Align="Align.Center">Hai ~ (｡&gt﹏&lt｡) ~ Selamat datang kembali</MudText>
+            <MudText Align="Align.Center">Silahkan masuk terlebih dahulu ...</MudText>
+            <MudDivider Class="mx-8 my-3" />
+            <MudForm @ref="form">
+                <MudTextField T="string" @ref="userNameNik" Label="User Name / NIK" Required="true" RequiredError="User Name / NIK tidak boleh kosong" />
+                <MudTextField T="string" @ref="password" Label="Kata Sandi" InputType="InputType.Password" Required="true" RequiredError="Kata Sandi tidak boleh kosong" />
+            </MudForm>
+        </MudCardContent>
+        <MudCardActions Class="pa-4">
+            <MudText Align="Align.Center" Class="red-text">
+                <small>@errorMessage</small>
+            </MudText>
+            <MudButton OnClick="Login" Variant="Variant.Filled" Class="ml-auto" Color="Color.Secondary" Disabled="isSubmitted">
+                @(isSubmitted ? "Mohon Menunggu .." : "Masuk")
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudContainer>
+
+<style>
+    input.mud-input-slot {
+        text-transform: uppercase;
+    }
+</style>
+
+
+@code {
+    [CascadingParameter] public Task<AuthenticationState> authStateTask { get; set; }
+
+    private MudForm form;
+
+    private MudTextField<string> userNameNik;
+    private MudTextField<string> password;
+
+    private string errorMessage = string.Empty;
+    private bool isSubmitted = false;
+
+    protected override async Task OnInitializedAsync() {
+        var user = (await authStateTask).User;
+        if (user.Identity.IsAuthenticated) {
+            _nm.NavigateTo(_nm.BaseUri);
+        }
+    }
+
+    private async void Login() {
+        errorMessage = string.Empty;
+        if (form.IsValid) {
+            isSubmitted = true;
+            base.StateHasChanged();
+            await Task.Run(async () => {
+                errorMessage = await _userRepo.LoginUser(userNameNik.Value, password.Value);
+            });
+            isSubmitted = false;
+            base.StateHasChanged();
+            if (string.IsNullOrEmpty(errorMessage)) {
+                _nm.NavigateTo(_nm.BaseUri);
+            }
+            else {
+                _snackbar.Add($@"
+                    <div>
+                        <h3>Login Gagal</h3>
+                        <p>{errorMessage}</p>
+                    </div>
+                ", Severity.Error);
+            }
+        }
+    }
+}

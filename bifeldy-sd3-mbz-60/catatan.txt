@@ -1,0 +1,132 @@
+﻿
+-- ORACLE
+
+CREATE TABLE API_KEY_T (
+  key VARCHAR2(255 BYTE),
+  ip_origin VARCHAR2(255 BYTE) NOT NULL,
+  app_name VARCHAR2(255 BYTE),
+  --
+  CONSTRAINT api_key_t_pk PRIMARY KEY (key, app_name)
+);
+
+CREATE TABLE API_TOKEN_T (
+  user_name VARCHAR2(255 BYTE),
+  password VARCHAR2(255 BYTE) NOT NULL,
+  app_name VARCHAR2(255 BYTE),
+  last_login TIMESTAMP,
+  token_sekali_pakai VARCHAR2(4000 BYTE),
+  --
+  CONSTRAINT api_token_t_pk PRIMARY KEY (user_name, app_name)
+);
+
+CREATE TABLE API_DC_T (
+  dc_kode VARCHAR2(255 BYTE),
+  app_name VARCHAR2(255 BYTE),
+  api_path VARCHAR2(4000 BYTE),
+  --
+  CONSTRAINT api_dc_t_pk PRIMARY KEY (dc_kode, app_name)
+);
+
+
+-- POSTGRES
+
+CREATE TABLE API_KEY_T (
+  key TEXT,
+  ip_origin TEXT NOT NULL,
+  app_name TEXT,
+  --
+  PRIMARY KEY (key, app_name)
+);
+
+CREATE TABLE API_TOKEN_T (
+  user_name TEXT,
+  password TEXT NOT NULL,
+  app_name TEXT,
+  last_login TIMESTAMP,
+  token_sekali_pakai TEXT,
+  --
+  PRIMARY KEY (user_name, app_name)
+);
+
+CREATE TABLE API_DC_T (
+  dc_kode VARCHAR(255),
+  app_name VARCHAR(255),
+  api_path VARCHAR(4000),
+  --
+  PRIMARY KEY (dc_kode, app_name)
+);
+
+
+-- NginX .conf
+
+# Tanpa Docker
+location /DataDcHOSIM/ {
+    proxy_pass http://localhost:35201/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Prefix /DataDcHOSIM;
+}
+
+# Dengan Docker
+location /DataDcG256SIM/ {
+    proxy_pass http://api-data-dc-g256sim-1:80/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "Upgrade";
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Prefix /DataDcG256SIM;
+}
+
+
+-- Service File
+
+[Unit]
+Description=WebAPI DataDc
+[Service]
+WorkingDirectory=/var/www/HO/DataDc
+ExecStart=/usr/bin/dotnet /var/www/HO/DataDc/DataDc.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=dotnet-example
+User=root
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+[Install]
+WantedBy=multi-user.target
+
+
+-- Docker compose
+
+version: "3.9"
+name: api-data-dc
+services:
+  # gxxxsim:
+  # ubah sesuaikan kode gudang 'gxxxsim' di bawah ini
+  g256sim:
+    image: 172.24.16.251:5000/bifeldy/api-data-dc:latest
+    restart: unless-stopped
+    volumes:
+      # api-data-dc/data-gxxxsim
+      # buat folder kosong kalau belum ada
+      - ./api-data-dc/data-g256sim:/app/_data
+    environment:
+      KUNCI_IP_DOMAIN: docker-hub-nginx-1:80
+      KUNCI_GXXX: kunci-dcg256sim
+      IS_USING_POSTGRES: true
+      TZ: Asia/Jakarta
+    networks:
+      # buat jaringan jika belum ada
+      - bifeldy-net-global
+networks:
+  bifeldy-net-global:
+    name: bifeldy-net-global
+    external: true

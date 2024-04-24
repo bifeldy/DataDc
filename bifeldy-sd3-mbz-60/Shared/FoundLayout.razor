@@ -1,0 +1,126 @@
+﻿@inherits LayoutComponentBase
+
+@implements IDisposable
+
+@using Microsoft.Extensions.Options;
+
+@using bifeldy_sd3_lib_60.Models;
+@using bifeldy_sd3_lib_60.Repositories
+@using bifeldy_sd3_lib_60.Services
+
+@using bifeldy_sd3_mbz_60.Components.Spinner;
+
+@inject IJSRuntime _js
+@inject NavigationManager _nm
+@inject IHttpContextAccessor _hca
+
+@inject ISpinnerService _spinnerService
+@inject IOptions<EnvVar> _envVar
+@inject ILogger<FoundLayout> _logger
+@inject IGlobalService _gs
+@inject IApplicationService _app
+@inject IGeneralRepository _generalRepo
+
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="true" DisableGutters="true">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" Class="ml-1"/>
+        <MudText>@_app.AppName ~ @_kodeDc :: @(_envVar.Value.IS_USING_POSTGRES ? "PG" : "ORA")</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Inherit" Href="https://mudblazor.com/" Target="_blank" />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Href="https://github.com/MudBlazor/MudBlazor/" Target="_blank" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Mini" OpenMiniOnHover="true" ClipMode="@DrawerClipMode.Always">
+        <MudDrawerHeader Class="mud-theme-dark pa-4" Style="align-items: center;">
+            <MudIcon Icon="@Icons.Material.Filled.PersonPin" Title="User" />
+            <!--
+                <MudImage Src="https://mudblazor.com/images/mony.jpg" Class="rounded-lg" Width="24" />
+            -->
+            @if (_drawerOpen) {
+                <MudText Typo="Typo.h6" Class="ml-3 overflow-hidden" Style="white-space: nowrap; text-overflow: ellipsis;">
+                    <AuthorizeView>
+                        <Authorized>
+                            @context.User.Identity?.Name
+                        </Authorized>
+                        <NotAuthorized>
+                            Tamu Guest
+                        </NotAuthorized>
+                    </AuthorizeView>
+                </MudText>
+            }
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent Class="mb-8">@Body</MudMainContent>
+    <MudAppBar Bottom="true" Elevation="1" Dense="true" Style="max-height: 32px;" DisableGutters="true" Class="px-2">
+        <MudText>
+            <small>v@_app.AppVersion</small>
+        </MudText>
+        <MudSpacer />
+        <MudText>
+            <small>@_clientIp</small>
+        </MudText>
+    </MudAppBar>
+</MudLayout>
+
+
+@code {
+
+    string _clientIp = string.Empty;
+    string _kodeDc = string.Empty;
+
+    bool _drawerOpen = true;
+
+    protected override async void OnInitialized() {
+        _nm.LocationChanged -= OnLocationChanged;
+        _nm.LocationChanged += OnLocationChanged;
+        _kodeDc = await _generalRepo.GetKodeDc();
+        _clientIp = _gs.CleanIpOrigin(_hca.HttpContext?.Connection.RemoteIpAddress.ToString());
+        base.StateHasChanged();
+    }
+
+    public void Dispose() {
+        _nm.LocationChanged -= OnLocationChanged;
+    }
+
+    private async void OnLocationChanged(object sender, LocationChangedEventArgs args) {
+        await ShowLoadingAnimation();
+        if (args.IsNavigationIntercepted) {
+            // Navigated From HTML (eg. href="", document.window.location="")
+        }
+        await ChangePageTitle();
+        base.StateHasChanged();
+    }
+
+    private void DrawerToggle() {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task ChangePageTitle() {
+        try {
+            string oldDocumentTitle = await _js.InvokeAsync<string>("getDocumentTitle");
+            await _js.InvokeVoidAsync("setDocumentTitle", $"{oldDocumentTitle} | {_app.AppName} ~ {_kodeDc}");
+        }
+        catch (Exception ex) {
+            _logger.LogError($"[FOUND_LAYOUT_RAZOR-CHANGE_PAGE_TITLE] 📃 {ex.Message}");
+        }
+    }
+
+    private async Task ShowLoadingAnimation() {
+        try {
+            string oldUrl = await _js.InvokeAsync<string>("getDocumentPreviousUrl");
+            if (oldUrl != _nm.Uri) {
+                _spinnerService.Show();
+            }
+            await _js.InvokeVoidAsync("setDocumentPreviousUrl", _nm.Uri);
+        }
+        catch (Exception ex) {
+            _logger.LogError($"[FOUND_LAYOUT_RAZOR-SHOW_LOADING_ANIMATION] 📃 {ex.Message}");
+        }
+    }
+
+}

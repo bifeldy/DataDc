@@ -1,0 +1,52 @@
+﻿@inherits ComponentBase
+
+@using bifeldy_sd3_lib_60.Services
+@using bifeldy_sd3_lib_60.Tables
+
+@inject IApplicationService _as
+@inject IChiperService _chiper
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+            @MudDialog.Title
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="@apiKey.KEY" Label="Key" ReadOnly="true" Required />
+        <MudTextField @bind-Value="@apiKey.IP_ORIGIN" Label="IP Address" Required />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" EndIcon="@Icons.Material.Filled.Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="Save" EndIcon="@Icons.Material.Filled.Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public API_KEY_T apiKey { get; set; } = null;
+
+    protected override void OnInitialized() {
+        if (apiKey == null) {
+            apiKey = new API_KEY_T() {
+                KEY = _chiper.HashText($"{DateTime.Now:yyyy-MM-ddTHH:mm:ss.fffZ}"),
+                IP_ORIGIN = "10.x.x.x; 172.16.x.x; 192.168.x.x; 127.0.0.1; ::1; localhost"
+            };
+        }
+    }
+
+    private void Cancel() {
+        MudDialog.Cancel();
+    }
+
+    private void Save() {
+        if (!string.IsNullOrEmpty(apiKey?.KEY) && !string.IsNullOrEmpty(apiKey?.IP_ORIGIN)) {
+            MudDialog.Close(DialogResult.Ok(apiKey));
+        }
+    }
+
+}

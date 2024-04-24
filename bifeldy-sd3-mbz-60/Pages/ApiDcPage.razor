@@ -1,0 +1,270 @@
+﻿@page "/api-dc-list"
+@inherits PagesLayout
+@attribute [Authorize(Roles = "USER_SD_SSD_3")]
+
+@using System.Data
+@using System.Diagnostics
+@using System.Web
+
+@using bifeldy_sd3_lib_60.Databases
+@using bifeldy_sd3_lib_60.Extensions
+@using bifeldy_sd3_lib_60.Models
+@using bifeldy_sd3_lib_60.Repositories
+@using bifeldy_sd3_lib_60.Services
+@using bifeldy_sd3_lib_60.Tables
+
+@using bifeldy_sd3_mbz_60.Models
+@using bifeldy_sd3_mbz_60.Shared.Dialogs
+
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+@inject IOraPg _orapg
+@inject IApplicationService _app
+@inject IGeneralRepository _generalRepo
+@inject IHttpService _http
+
+
+<PageTitle>List API DC</PageTitle>
+
+<MudPaper Square="true" Class="px-0" Style="background: cyan; height: 64px;" />
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-5 px-5">
+
+    <MudText Typo="Typo.h3" GutterBottom="true">
+        List API DC
+    </MudText>
+
+    <MudText Typo="Typo.h6">
+        Rincian list IP Address API yang ada di DC
+    </MudText>
+
+    <MudText Class="red-text">
+        Bisa digunakan untuk test ping (?) ~
+    </MudText>
+
+    <MudDivider Class="my-3" />
+
+    @if (!isDcHo) {
+
+        <MudText>.: Hanya dapat diakses dari DCHO :.</MudText>
+
+    }
+    else {
+
+        @if (isBusy) {
+            <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+        }
+        else {
+            <MudTable T="ListApiDc" Items="ipDc" Filter="new Func<ListApiDc, bool>(SearchFilter)" OnRowClick="RowClickEvent" Hover="true" SortLabel="Sort By" Elevation="0" Dense="true">
+                <ToolBarContent>
+                    <MudButton Class="mx-1" Color="Color.Primary" Variant="Variant.Filled" OnClick="RefreshData" StartIcon="@Icons.Material.Filled.Refresh">Refresh</MudButton>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="searchQuery" Class="mx-1" Placeholder="Pencarian" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium"></MudTextField>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh>
+                        <MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<ListApiDc, object>(x => x.DC_KODE)">Kode Dc</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<ListApiDc, object>(x => x.IP_NGINX)">IP Nginx</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<ListApiDc, object>(x => x.API_PATH)">Api Path</MudTableSortLabel>
+                    </MudTh>
+                    <MudTh>
+                        <MudTableSortLabel SortBy="new Func<ListApiDc, object>(x => x.PING_PONG)">Ping Pong</MudTableSortLabel>
+                    </MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Kode Dc">@context.DC_KODE</MudTd>
+                    <MudTd DataLabel="IP Nginx">@context.IP_NGINX</MudTd>
+                    <MudTd DataLabel="Api Path">@context.API_PATH</MudTd>
+                    <MudTd DataLabel="Ping Pong">
+                        <MudButton
+                            Variant="Variant.Outlined"
+                            StartIcon="@Icons.Material.Filled.NetworkPing"
+                            Style="text-transform: none"
+                            OnClick="@(e => PingPong(context))"
+                            Color="@(
+                                context.PING_PONG <= 50 ?
+                                    Color.Success : (
+                                        context.PING_PONG <= 100 ?
+                                            Color.Warning : Color.Error
+                                    )
+                            )"
+                        >
+                            @(context.PING_PONG == null ? "--" : context.PING_PONG) ms
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[]{ 50, 100 }" />
+                </PagerContent>
+            </MudTable>
+        }
+
+    }
+
+</MudContainer>
+
+
+@code {
+    private bool isBusy = false;
+    private bool isDcHo = false;
+
+    private List<ListApiDc> ipDc = new List<ListApiDc>();
+
+    private string searchQuery = string.Empty;
+    private bool SearchFilter(ListApiDc element) => Search(element, searchQuery);
+
+    protected override void OnInitialized() {
+        RefreshData();
+    }
+
+    private async void PingPong(ListApiDc dc) {
+        dc.PING_PONG = null;
+        if (!string.IsNullOrEmpty(dc.API_PATH)) {
+            var separator = "/api/";
+            var uri = new Uri($"http://{dc.IP_NGINX}{dc.API_PATH}");
+            string[] urls = uri.ToString().Split(separator);
+            if (urls.Length == 2) {
+                urls[1] = "ping-pong";
+                string url = string.Join(separator, urls);
+                uri = new Uri(url);
+                var queryUrlDc = HttpUtility.ParseQueryString(uri.Query);
+                queryUrlDc.Set("key", _app.AppName);
+                var uriBuilder = new UriBuilder(uri);
+                uriBuilder.Query = queryUrlDc.ToString();
+                uri = uriBuilder.Uri;
+                url = uri.ToString();
+                var sw = new Stopwatch();
+                sw.Start();
+                var res = await _http.HeadData(url);
+                if (res.IsSuccessStatusCode) {
+                    sw.Stop();
+                    dc.PING_PONG = sw.ElapsedMilliseconds;
+                }
+            }
+        }
+        await base.InvokeAsync(base.StateHasChanged);
+    }
+
+    private void RefreshData() {
+        Task.Run(async () => {
+            string kodeDc = await _generalRepo.GetKodeDc();
+            isDcHo = kodeDc == "DCHO";
+            await base.InvokeAsync(base.StateHasChanged);
+            if (isDcHo) {
+                isBusy = true;
+                await base.InvokeAsync(base.StateHasChanged);
+                ipDc.Clear();
+                DataTable dt = await _orapg.GetDataTableAsync($@"
+                    SELECT
+                        a.dc_kode, a.ip_nginx, b.app_name, b.api_path,
+                        COALESCE(b.api_path, 'XxxG***SIM/api/') default_api_path
+                    FROM
+                        dc_tabel_ip_t a
+                        LEFT JOIN api_dc_t b ON (
+                            a.dc_kode = b.dc_kode
+                            AND UPPER(b.app_name) = :app_name
+                        )
+                    ORDER BY a.dc_kode
+                ", new List<CDbQueryParamBind>() {
+                    new CDbQueryParamBind { NAME = "app_name", VALUE = _app.AppName.ToUpper() }
+                });
+                List<ListApiDc> newIpDc = dt.ToList<ListApiDc>();
+                ipDc.AddRange(newIpDc);
+                isBusy = false;
+                await base.InvokeAsync(base.StateHasChanged);
+            }
+        });
+    }
+
+    private bool Search(ListApiDc element, string searchString) {
+        if (string.IsNullOrWhiteSpace(searchString)) {
+            return true;
+        }
+        if (!string.IsNullOrEmpty(element.DC_KODE)) {
+            if (element.DC_KODE.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+        }
+        if (!string.IsNullOrEmpty(element.IP_NGINX)) {
+            if (element.IP_NGINX.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+        }
+        if (!string.IsNullOrEmpty(element.API_PATH)) {
+            if (element.API_PATH.Contains(searchString, StringComparison.OrdinalIgnoreCase)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void RowClickEvent(TableRowClickEventArgs<ListApiDc> tableRowClickEventArgs) {
+        ListApiDcEdit("Ubah Data", tableRowClickEventArgs.Item);
+    }
+
+    private async void ListApiDcEdit(string title, ListApiDc apiDc = null) {
+        DialogParameters parameters = new DialogParameters();
+        parameters.Add("apiDc", apiDc);
+
+        DialogOptions options = new DialogOptions {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = false,
+            CloseButton = true
+        };
+
+        IDialogReference dialog = DialogService.Show<ApiDcDialogEdit>(title, parameters, options);
+
+        DialogResult result = await dialog.Result;
+        if (!result.Cancelled) {
+            if (string.IsNullOrEmpty(apiDc.APP_NAME)) {
+                apiDc = (ListApiDc) result.Data;
+                bool success = false;
+                await Task.Run(async () => {
+                    success = await _orapg.ExecQueryAsync($@"
+                        INSERT INTO api_dc_t (dc_kode, app_name, api_path)
+                        VALUES (:dc_kode, :app_name, :api_path)
+                    ", new List<CDbQueryParamBind>() {
+                        new CDbQueryParamBind { NAME = "dc_kode", VALUE = apiDc.DC_KODE.ToUpper() },
+                        new CDbQueryParamBind { NAME = "app_name", VALUE = _app.AppName.ToUpper() },
+                        new CDbQueryParamBind { NAME = "api_path", VALUE = apiDc.API_PATH }
+                    });
+                });
+                if (success) {
+                    Snackbar.Add("Berhasil Menambah List API DC", Severity.Success);
+                }
+                else {
+                    Snackbar.Add("Gagal Menambah List API DC", Severity.Error);
+                }
+            }
+            else if (!string.IsNullOrEmpty(apiDc.IP_NGINX)) {
+                apiDc = (ListApiDc) result.Data;
+                bool success = false;
+                await Task.Run(async () => {
+                    success = await _orapg.ExecQueryAsync($@"
+                        UPDATE api_dc_t
+                        SET api_path = :api_path
+                        WHERE dc_kode = :dc_kode AND app_name = :app_name
+                    ", new List<CDbQueryParamBind>() {
+                        new CDbQueryParamBind { NAME = "dc_kode", VALUE = apiDc.DC_KODE.ToUpper() },
+                        new CDbQueryParamBind { NAME = "app_name", VALUE = _app.AppName.ToUpper() },
+                        new CDbQueryParamBind { NAME = "api_path", VALUE = apiDc.API_PATH }
+                    });
+                });
+                if (success) {
+                    Snackbar.Add("Berhasil Memperbarui List API DC", Severity.Success);
+                }
+                else {
+                    Snackbar.Add("Gagal Memperbarui List API DC", Severity.Error);
+                }
+            }
+        }
+        RefreshData();
+    }
+
+}

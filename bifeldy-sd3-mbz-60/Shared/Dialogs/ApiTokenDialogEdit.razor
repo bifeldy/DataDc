@@ -1,0 +1,72 @@
+﻿@inherits ComponentBase
+
+@using bifeldy_sd3_lib_60.Services
+@using bifeldy_sd3_lib_60.Tables
+
+@inject IApplicationService _as
+@inject IChiperService _chiper
+
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3 mb-n1" />
+            @MudDialog.Title
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="@apiToken.USER_NAME" Label="User Name" ReadOnly="!isNewData" Required />
+        <MudTextField @bind-Value="@apiToken.PASSWORD" Label="Password" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="TogglePassword" Required />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" EndIcon="@Icons.Material.Filled.Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Success" OnClick="Save" EndIcon="@Icons.Material.Filled.Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+ @code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public API_TOKEN_T apiToken { get; set; } = null;
+
+    private bool isNewData = false;
+
+    private InputType PasswordInput = InputType.Password;
+    private string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+    private bool ShowPassword = false;
+
+    protected override void OnInitialized() {
+        if (apiToken == null) {
+            isNewData = true;
+            apiToken = new API_TOKEN_T() {
+                USER_NAME = null,
+                PASSWORD = null
+            };
+        }
+    }
+
+    private void Cancel() {
+        MudDialog.Cancel();
+    }
+
+    private void Save() {
+        if (!string.IsNullOrEmpty(apiToken?.USER_NAME) && !string.IsNullOrEmpty(apiToken?.PASSWORD)) {
+            MudDialog.Close(DialogResult.Ok(apiToken));
+        }
+    }
+
+    private void TogglePassword() {
+        if (ShowPassword) {
+            ShowPassword = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else {
+            ShowPassword = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+}

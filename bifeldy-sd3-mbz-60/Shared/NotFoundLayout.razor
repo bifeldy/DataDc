@@ -1,0 +1,22 @@
+﻿@inherits FoundLayout
+
+@using System.Net
+
+@using Microsoft.AspNetCore.Http
+
+@inject IHttpContextAccessor _hca
+
+@{
+    base.BuildRenderTree(__builder);
+}
+
+@code {
+
+    protected override void OnInitialized() {
+        base.OnInitialized();
+        if (_hca.HttpContext != null && !_hca.HttpContext.Response.HasStarted) {
+            _hca.HttpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
+        }
+    }
+
+}

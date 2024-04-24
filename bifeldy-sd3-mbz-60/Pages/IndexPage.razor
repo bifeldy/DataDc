@@ -1,0 +1,37 @@
+﻿@page "/"
+@inherits PagesLayout
+
+
+<PageTitle>Index</PageTitle>
+
+<MudPaper Square="true" Class="px-0" Style="background: red; height: 64px;" />
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="py-5 px-5">
+
+    <MudText Typo="Typo.h3" GutterBottom="true">
+        Hello ::
+        <AuthorizeView>
+            <Authorized>
+                @context.User.Identity?.Name
+            </Authorized>
+            <NotAuthorized>
+                World
+            </NotAuthorized>
+        </AuthorizeView>
+        !!
+    </MudText>
+    <MudText Class="mb-8">Welcome to your new app, powered by MudBlazor!</MudText>
+    <MudAlert Severity="Severity.Normal">You can find documentation and examples on our website here:
+        <MudLink Href="https://mudblazor.com" Typo="Typo.body2" Color="Color.Inherit">
+            <b>www.mudblazor.com</b>
+        </MudLink>
+    </MudAlert>
+    <MudDivider Class="my-8" />
+    <MudText>Penggunaan API Key</MudText>
+    <MudText>URL Query Parameter :: http://xxx.xxx.xxx.xxx:xx/api/xxx-xxx?key=...blablabla</MudText>
+    <MudDivider Class="my-8" />
+    <MudText>Penggunaan Authorization JSON Web Token</MudText>
+    <MudText>Http Request Header :: Authorization: Bearer eyj...blablabla</MudText>
+    <MudDivider Class="mt-8" />
+
+</MudContainer>

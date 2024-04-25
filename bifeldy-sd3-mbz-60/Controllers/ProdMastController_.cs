@@ -33,7 +33,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
         private readonly IGeneralRepository _generalRepo;
         private readonly IProdMastService _prodMast;
 
-        private List<string> ExcludeJenisDc = new List<string> { "LPG", "WHK" };
+        private List<string> ExcludeJenisDc = new List<string> { "LPG", "IPLAZA" };
 
         public ProdMastController(
             IOptions<ENV> env,
@@ -43,7 +43,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
             IConverterService cs,
             IGeneralRepository generalRepo,
             IProdMastService prodMast
-        ) : base(env, orapg) {
+        ) : base(env, orapg, generalRepo) {
             _env = env.Value;
             _app = app;
             _http = http;

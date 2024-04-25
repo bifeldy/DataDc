@@ -24,6 +24,8 @@ namespace bifeldy_sd3_mbz_60.Controllers {
     [Route("planogram-display")]
     public sealed class PlanogramDisplayController : CBaseController {
 
+        private readonly ENV _env;
+
         private readonly IApplicationService _app;
         private readonly IHttpService _http;
         private readonly IOraPg _orapg;
@@ -42,6 +44,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
             IGeneralRepository generalRepo,
             IPlanogramDisplayService planDisp
         ) : base(env, orapg) {
+            _env = env.Value;
             _app = app;
             _http = http;
             _orapg = orapg;
@@ -72,7 +75,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
 
                 string currentKodeDc = await _generalRepo.GetKodeDc();
                 if (currentKodeDc != "DCHO") {
-                    (decimal pages, decimal count, DataTable dt) = await _planDisp.GetDataPaging(_orapg, fd, sort, order, page, row);
+                    (decimal pages, decimal count, DataTable dt) = await _planDisp.GetDataPaging(_env.IS_USING_POSTGRES, _orapg, fd, sort, order, page, row);
 
                     return Ok(new ResponseJsonMulti<dynamic> {
                         info = $"😅 201 - {GetType().Name} 🤣",
@@ -166,7 +169,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
                     });
                 }
 
-                (decimal pages, decimal count, DataTable dt) = await _planDisp.GetDataPaging(dbOraPg, fd, sort, order, page, row);
+                (decimal pages, decimal count, DataTable dt) = await _planDisp.GetDataPaging(dbIsUsingPostgre, dbOraPg, fd, sort, order, page, row);
 
                 return Ok(new ResponseJsonMulti<dynamic> {
                     info = $"😅 201 - {GetType().Name} (Mirror) 🤣",

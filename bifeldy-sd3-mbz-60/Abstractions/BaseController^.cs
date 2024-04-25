@@ -28,9 +28,9 @@ namespace bifeldy_sd3_mbz_60.Abstractions {
         protected async Task<ObjectResult> CheckExcludeJenisDc(InputJsonDc fd, List<string> excludeJenisDc) {
             string targetJenisDc = await _orapg.ExecScalarAsync<string>($@"
                 SELECT
-                    tbl_dc_nama
+                    tbl_jenis_dc
                 FROM
-                    dc_tabel_v
+                    dc_tabel_dc_t
                 WHERE
                     tbl_dc_kode = :kode_dc
             ", new List<CDbQueryParamBind>() {

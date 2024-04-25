@@ -91,12 +91,12 @@ namespace bifeldy_sd3_mbz_60.Services {
             ";
         }
 
-        public override async Task<(decimal, decimal, DataTable)> GetDataPaging(IDatabase db, InputJsonDc fd, string sort, string order, string page, string row) {
-            return await GetDataPagingWithParam(db, fd, sort, order, page, row);
+        public override async Task<(decimal, decimal, DataTable)> GetDataPaging(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order, string page, string row) {
+            return await GetDataPagingWithParam(isPg, db, fd, sort, order, page, row);
         }
 
-        public override async Task<(decimal, decimal, DataTable)> GetDataFull(IDatabase db, InputJsonDc fd, string sort, string order) {
-            return await GetDataFullWithParam(db, fd, sort, order);
+        public override async Task<(decimal, decimal, DataTable)> GetDataFull(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order) {
+            return await GetDataFullWithParam(isPg, db, fd, sort, order);
         }
 
     }

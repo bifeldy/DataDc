@@ -7,8 +7,8 @@ using bifeldy_sd3_mbz_60.Models;
 namespace bifeldy_sd3_mbz_60.Abstractions {
 
     public interface IBaseService {
-        Task<(decimal, decimal, DataTable)> GetDataPaging(IDatabase db, InputJsonDc fd, string sort, string order, string page, string row);
-        Task<(decimal, decimal, DataTable)> GetDataFull(IDatabase db, InputJsonDc fd, string sort, string order);
+        Task<(decimal, decimal, DataTable)> GetDataPaging(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order, string page, string row);
+        Task<(decimal, decimal, DataTable)> GetDataFull(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order);
     }
 
     public abstract class CBaseService : IBaseService {
@@ -52,7 +52,7 @@ namespace bifeldy_sd3_mbz_60.Abstractions {
             };
         }
 
-        protected virtual async Task<(decimal, decimal, DataTable)> GetDataPagingWithParam(IDatabase db, InputJsonDc fd, string sort, string order, string page, string row, List<CDbQueryParamBind> sqlParam = null) {
+        protected virtual async Task<(decimal, decimal, DataTable)> GetDataPagingWithParam(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order, string page, string row, List<CDbQueryParamBind> sqlParam = null) {
             decimal queryPage = string.IsNullOrEmpty(page) ? 1 : ulong.Parse(page);
             decimal queryRow = string.IsNullOrEmpty(row) ? 10 : ulong.Parse(row);
 
@@ -91,7 +91,7 @@ namespace bifeldy_sd3_mbz_60.Abstractions {
             return (pages, count, dt);
         }
 
-        protected virtual async Task<(decimal, decimal, DataTable)> GetDataFullWithParam(IDatabase db, InputJsonDc fd, string sort, string order, List<CDbQueryParamBind> sqlParam = null) {
+        protected virtual async Task<(decimal, decimal, DataTable)> GetDataFullWithParam(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order, List<CDbQueryParamBind> sqlParam = null) {
             DataTable dt = await db.GetDataTableAsync($@"
                 SELECT
                     {GetAllColumnSelectAsString()}
@@ -101,8 +101,8 @@ namespace bifeldy_sd3_mbz_60.Abstractions {
             return (1, dt.Rows.Count, dt);
         }
 
-        public abstract Task<(decimal, decimal, DataTable)> GetDataPaging(IDatabase db, InputJsonDc fd, string sort, string order, string page, string row);
-        public abstract Task<(decimal, decimal, DataTable)> GetDataFull(IDatabase db, InputJsonDc fd, string sort, string order);
+        public abstract Task<(decimal, decimal, DataTable)> GetDataPaging(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order, string page, string row);
+        public abstract Task<(decimal, decimal, DataTable)> GetDataFull(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order);
 
     }
 

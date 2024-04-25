@@ -36,18 +36,18 @@ namespace bifeldy_sd3_mbz_60.Services {
             ";
         }
 
-        public override async Task<(decimal, decimal, DataTable)> GetDataPaging(IDatabase db, InputJsonDc fd, string sort, string order, string page, string row) {
+        public override async Task<(decimal, decimal, DataTable)> GetDataPaging(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order, string page, string row) {
             var sqlParam = new List<CDbQueryParamBind>() {
                 new CDbQueryParamBind { NAME = "kode_dc", VALUE = fd.kode_dc.ToUpper() }
             };
-            return await GetDataPagingWithParam(db, fd, sort, order, page, row, sqlParam);
+            return await GetDataPagingWithParam(isPg, db, fd, sort, order, page, row, sqlParam);
         }
 
-        public override async Task<(decimal, decimal, DataTable)> GetDataFull(IDatabase db, InputJsonDc fd, string sort, string order) {
+        public override async Task<(decimal, decimal, DataTable)> GetDataFull(bool isPg, IDatabase db, InputJsonDc fd, string sort, string order) {
             var sqlParam = new List<CDbQueryParamBind>() {
                 new CDbQueryParamBind { NAME = "kode_dc", VALUE = fd.kode_dc.ToUpper() }
             };
-            return await GetDataFullWithParam(db, fd, sort, order, sqlParam);
+            return await GetDataFullWithParam(isPg, db, fd, sort, order, sqlParam);
         }
 
     }

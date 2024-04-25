@@ -1,7 +1,6 @@
 ﻿using System.Data;
 
 using bifeldy_sd3_lib_60.Abstractions;
-using bifeldy_sd3_lib_60.Models;
 
 using bifeldy_sd3_mbz_60.Abstractions;
 using bifeldy_sd3_mbz_60.Models;

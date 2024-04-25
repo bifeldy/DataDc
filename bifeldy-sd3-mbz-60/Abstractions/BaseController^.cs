@@ -62,7 +62,7 @@ namespace bifeldy_sd3_mbz_60.Abstractions {
                 return BadRequest(new ResponseJsonSingle<dynamic> {
                     info = $"🙄 403 - {GetType().Name} 😪",
                     result = new {
-                        message = $"Tidak Dapat mengambil data pada DC {string.Join(", ", excludeJenisDc.ToArray())} karena masuk ke dalam daftar pengecualian"
+                        message = $"Tidak dapat mengambil data pada DC {string.Join(", ", excludeJenisDc.ToArray())} karena masuk ke dalam daftar pengecualian"
                     }
                 });
             }

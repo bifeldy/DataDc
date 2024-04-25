@@ -9,15 +9,15 @@ using bifeldy_sd3_lib_60.Models;
 
 using bifeldy_sd3_mbz_60.Models;
 
-namespace bifeldy_sd3_mbz_60.Controllers {
+namespace bifeldy_sd3_mbz_60.Abstractions {
 
-    public abstract class DataDcController : ControllerBase {
+    public abstract class CBaseController : ControllerBase {
 
         private readonly ENV _env;
 
         private readonly IOraPg _orapg;
 
-        public DataDcController(
+        public CBaseController(
             IOptions<ENV> env,
             IOraPg orapg
         ) {

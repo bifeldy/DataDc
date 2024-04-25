@@ -8,9 +8,9 @@ using bifeldy_sd3_mbz_60.Models;
 
 namespace bifeldy_sd3_mbz_60.Services {
 
-    public interface IPlanogramDisplayService : IDataDcService { }
+    public interface IPlanogramDisplayService : IBaseService { }
 
-    public sealed class CPlanogramDisplayService : CDataDcService, IPlanogramDisplayService {
+    public sealed class CPlanogramDisplayService : CBaseService, IPlanogramDisplayService {
 
         public CPlanogramDisplayService() {
             // Singleton Class

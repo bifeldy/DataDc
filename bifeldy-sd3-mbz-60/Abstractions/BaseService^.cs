@@ -6,12 +6,12 @@ using bifeldy_sd3_mbz_60.Models;
 
 namespace bifeldy_sd3_mbz_60.Abstractions {
 
-    public interface IDataDcService {
+    public interface IBaseService {
         Task<(decimal, decimal, DataTable)> GetDataPaging(IDatabase db, InputJsonDc fd, string sort, string order, string page, string row);
         Task<(decimal, decimal, DataTable)> GetDataFull(IDatabase db, InputJsonDc fd, string sort, string order);
     }
 
-    public abstract class CDataDcService : IDataDcService {
+    public abstract class CBaseService : IBaseService {
 
         //
         // { "key_json", "column_name" }

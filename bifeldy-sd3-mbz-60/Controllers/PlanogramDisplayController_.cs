@@ -14,6 +14,7 @@ using bifeldy_sd3_lib_60.Models;
 using bifeldy_sd3_lib_60.Repositories;
 using bifeldy_sd3_lib_60.Services;
 
+using bifeldy_sd3_mbz_60.Abstractions;
 using bifeldy_sd3_mbz_60.Models;
 using bifeldy_sd3_mbz_60.Services;
 
@@ -21,7 +22,7 @@ namespace bifeldy_sd3_mbz_60.Controllers {
 
     [ApiController]
     [Route("planogram-display")]
-    public sealed class PlanogramDisplayController : DataDcController {
+    public sealed class PlanogramDisplayController : CBaseController {
 
         private readonly IApplicationService _app;
         private readonly IHttpService _http;
